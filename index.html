@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Match Game</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 40px 20px;
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+    }
+    .screen.active { display: flex; }
+
+    h1 { font-size: 2rem; letter-spacing: 2px; }
+    h2 { font-size: 1.4rem; font-weight: 400; color: #aaa; }
+
+    /* ── START SCREEN ── */
+    #start-screen p {
+      color: #aaa;
+      line-height: 1.6;
+      max-width: 340px;
+    }
+
+    /* ── MEMORIZE SCREEN ── */
+    .color-box {
+      width: 260px;
+      height: 260px;
+      border-radius: 20px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      transition: background 0.3s;
+    }
+
+    .timer-ring {
+      position: relative;
+      width: 90px;
+      height: 90px;
+    }
+    .timer-ring svg { transform: rotate(-90deg); }
+    .timer-ring circle {
+      fill: none;
+      stroke-width: 6;
+    }
+    .ring-bg { stroke: #333; }
+    .ring-fill {
+      stroke: #e94560;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear;
+    }
+    .timer-num {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    /* ── MATCH SCREEN ── */
+    .palette-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .swatch-preview {
+      width: 100%;
+      height: 100px;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 14px;
+      border-radius: 7px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid #1a1a2e;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      cursor: grab;
+    }
+
+    /* hue gradient */
+    #hue-slider {
+      background: linear-gradient(to right,
+        hsl(0,100%,50%), hsl(30,100%,50%), hsl(60,100%,50%),
+        hsl(90,100%,50%), hsl(120,100%,50%), hsl(150,100%,50%),
+        hsl(180,100%,50%), hsl(210,100%,50%), hsl(240,100%,50%),
+        hsl(270,100%,50%), hsl(300,100%,50%), hsl(330,100%,50%),
+        hsl(360,100%,50%));
+    }
+
+    /* saturation & lightness are updated via JS */
+    #sat-slider, #lit-slider { }
+
+    /* ── RESULT SCREEN ── */
+    .result-row {
+      display: flex;
+      gap: 16px;
+      width: 100%;
+    }
+    .result-card {
+      flex: 1;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #16213e;
+    }
+    .result-color {
+      width: 100%;
+      height: 130px;
+    }
+    .result-label {
+      padding: 10px;
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+    .result-hex {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .score-ring {
+      position: relative;
+      width: 160px;
+      height: 160px;
+    }
+    .score-ring svg { transform: rotate(-90deg); }
+    .score-ring circle { fill: none; stroke-width: 12; }
+    .score-bg { stroke: #333; }
+    .score-fill { stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1); }
+    .score-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .score-pct { font-size: 2rem; font-weight: 700; }
+    .score-sub { font-size: 0.75rem; color: #888; margin-top: 2px; }
+
+    .score-msg { font-size: 1.1rem; color: #ccc; }
+
+    /* ── BUTTON ── */
+    button {
+      padding: 14px 40px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    button:active { transform: translateY(0); }
+
+    .btn-primary { background: #e94560; color: #fff; }
+    .btn-secondary { background: #16213e; color: #fff; border: 1px solid #333; }
+  </style>
+</head>
+<body>
+
+<!-- START -->
+<div id="start-screen" class="screen active">
+  <h1>Color Match</h1>
+  <p>A random color will appear for <strong>10 seconds</strong>.<br>
+     Memorize it, then recreate it using the color sliders.<br>
+     See how close you can get!</p>
+  <button class="btn-primary" onclick="startGame()">Play</button>
+</div>
+
+<!-- MEMORIZE -->
+<div id="memorize-screen" class="screen">
+  <h2>Memorize this color</h2>
+  <div class="color-box" id="target-box"></div>
+  <div class="timer-ring">
+    <svg width="90" height="90" viewBox="0 0 90 90">
+      <circle class="ring-bg" cx="45" cy="45" r="38"/>
+      <circle class="ring-fill" id="ring-fill" cx="45" cy="45" r="38"
+              stroke-dasharray="238.76" stroke-dashoffset="0"/>
+    </svg>
+    <div class="timer-num" id="timer-num">10</div>
+  </div>
+</div>
+
+<!-- MATCH -->
+<div id="match-screen" class="screen">
+  <h2>Match the color</h2>
+  <div class="palette-wrap">
+    <div class="swatch-preview" id="user-swatch"></div>
+
+    <div class="slider-row">
+      <div class="slider-label"><span>Hue</span><span id="hue-val">180°</span></div>
+      <input type="range" id="hue-slider" min="0" max="360" value="180" oninput="updatePicker()">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-label"><span>Saturation</span><span id="sat-val">50%</span></div>
+      <input type="range" id="sat-slider" min="0" max="100" value="50" oninput="updatePicker()">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-label"><span>Lightness</span><span id="lit-val">50%</span></div>
+      <input type="range" id="lit-slider" min="0" max="100" value="50" oninput="updatePicker()">
+    </div>
+  </div>
+  <button class="btn-primary" onclick="confirmColor()">Confirm</button>
+</div>
+
+<!-- RESULT -->
+<div id="result-screen" class="screen">
+  <h2>Results</h2>
+  <div class="result-row">
+    <div class="result-card">
+      <div class="result-color" id="res-target"></div>
+      <div class="result-label">Target<br><span class="result-hex" id="res-target-hex"></span></div>
+    </div>
+    <div class="result-card">
+      <div class="result-color" id="res-user"></div>
+      <div class="result-label">Your pick<br><span class="result-hex" id="res-user-hex"></span></div>
+    </div>
+  </div>
+
+  <div class="score-ring">
+    <svg width="160" height="160" viewBox="0 0 160 160">
+      <circle class="score-bg" cx="80" cy="80" r="64"/>
+      <circle class="score-fill" id="score-fill" cx="80" cy="80" r="64"
+              stroke-dasharray="402.12" stroke-dashoffset="402.12"/>
+    </svg>
+    <div class="score-text">
+      <span class="score-pct" id="score-pct">0%</span>
+      <span class="score-sub">match</span>
+    </div>
+  </div>
+
+  <p class="score-msg" id="score-msg"></p>
+
+  <div style="display:flex;gap:12px">
+    <button class="btn-primary" onclick="startGame()">Play Again</button>
+    <button class="btn-secondary" onclick="showStart()">Menu</button>
+  </div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────
+  let targetRGB = { r: 0, g: 0, b: 0 };
+  let timerInterval = null;
+  let secondsLeft = 10;
+  const CIRCUMFERENCE = 2 * Math.PI * 38; // 238.76
+
+  // ── Helpers ────────────────────────────────────────────────────────
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function hslToRgb(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return { r: Math.round(f(0) * 255), g: Math.round(f(8) * 255), b: Math.round(f(4) * 255) };
+  }
+
+  function rgbToHex({ r, g, b }) {
+    return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+  }
+
+  function colorDistance(a, b) {
+    // Weighted Euclidean distance in RGB (human perception weights)
+    const dr = a.r - b.r, dg = a.g - b.g, db = a.b - b.b;
+    const dist = Math.sqrt(0.299 * dr * dr + 0.587 * dg * dg + 0.114 * db * db);
+    const maxDist = Math.sqrt(0.299 * 255 * 255 + 0.587 * 255 * 255 + 0.114 * 255 * 255);
+    return Math.max(0, Math.round((1 - dist / maxDist) * 100));
+  }
+
+  function scoreMessage(pct) {
+    if (pct === 100) return "Perfect! Incredible eye!";
+    if (pct >= 90)  return "Outstanding! Almost identical!";
+    if (pct >= 75)  return "Great job! Very close!";
+    if (pct >= 55)  return "Not bad! Pretty decent match.";
+    if (pct >= 35)  return "Keep practicing, you'll get better!";
+    return "Way off — try again!";
+  }
+
+  function scoreColor(pct) {
+    if (pct >= 85) return '#2ecc71';
+    if (pct >= 60) return '#f39c12';
+    return '#e94560';
+  }
+
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ── Screens ────────────────────────────────────────────────────────
+  function showStart() {
+    clearInterval(timerInterval);
+    show('start-screen');
+  }
+
+  function startGame() {
+    clearInterval(timerInterval);
+
+    // Generate random target color (avoid very dark or very desaturated)
+    const h = randomInt(0, 359);
+    const s = randomInt(40, 100);
+    const l = randomInt(30, 70);
+    targetRGB = hslToRgb(h, s, l);
+
+    document.getElementById('target-box').style.background = rgbToHex(targetRGB);
+
+    // Timer setup
+    secondsLeft = 10;
+    document.getElementById('timer-num').textContent = secondsLeft;
+    const ring = document.getElementById('ring-fill');
+    ring.style.strokeDashoffset = '0';
+    ring.style.transition = 'none';
+
+    show('memorize-screen');
+
+    // Animate ring immediately on next frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        ring.style.transition = `stroke-dashoffset ${secondsLeft}s linear`;
+        ring.style.strokeDashoffset = CIRCUMFERENCE;
+      });
+    });
+
+    timerInterval = setInterval(() => {
+      secondsLeft--;
+      document.getElementById('timer-num').textContent = secondsLeft;
+      if (secondsLeft <= 0) {
+        clearInterval(timerInterval);
+        openMatchScreen();
+      }
+    }, 1000);
+  }
+
+  function openMatchScreen() {
+    // Reset sliders to mid values
+    document.getElementById('hue-slider').value = 180;
+    document.getElementById('sat-slider').value = 50;
+    document.getElementById('lit-slider').value = 50;
+    updatePicker();
+    show('match-screen');
+  }
+
+  function updatePicker() {
+    const h = +document.getElementById('hue-slider').value;
+    const s = +document.getElementById('sat-slider').value;
+    const l = +document.getElementById('lit-slider').value;
+
+    document.getElementById('hue-val').textContent = h + '°';
+    document.getElementById('sat-val').textContent = s + '%';
+    document.getElementById('lit-val').textContent = l + '%';
+
+    const color = `hsl(${h},${s}%,${l}%)`;
+    document.getElementById('user-swatch').style.background = color;
+
+    // Update sat slider gradient
+    const satSlider = document.getElementById('sat-slider');
+    satSlider.style.background = `linear-gradient(to right, hsl(${h},0%,${l}%), hsl(${h},100%,${l}%))`;
+
+    // Update lit slider gradient
+    const litSlider = document.getElementById('lit-slider');
+    litSlider.style.background = `linear-gradient(to right, hsl(${h},${s}%,0%), hsl(${h},${s}%,50%), hsl(${h},${s}%,100%))`;
+  }
+
+  function confirmColor() {
+    const h = +document.getElementById('hue-slider').value;
+    const s = +document.getElementById('sat-slider').value;
+    const l = +document.getElementById('lit-slider').value;
+    const userRGB = hslToRgb(h, s, l);
+    const pct = colorDistance(targetRGB, userRGB);
+
+    const targetHex = rgbToHex(targetRGB);
+    const userHex   = rgbToHex(userRGB);
+
+    document.getElementById('res-target').style.background = targetHex;
+    document.getElementById('res-user').style.background   = userHex;
+    document.getElementById('res-target-hex').textContent  = targetHex;
+    document.getElementById('res-user-hex').textContent    = userHex;
+    document.getElementById('score-msg').textContent       = scoreMessage(pct);
+
+    const scoreFill = document.getElementById('score-fill');
+    const circumference = 2 * Math.PI * 64; // 402.12
+    scoreFill.style.stroke = scoreColor(pct);
+    scoreFill.style.strokeDashoffset = circumference; // reset
+    scoreFill.style.transition = 'none';
+
+    show('result-screen');
+
+    // Animate score ring
+    const scoreEl = document.getElementById('score-pct');
+    scoreEl.textContent = '0%';
+    let displayed = 0;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const offset = circumference * (1 - pct / 100);
+        scoreFill.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)';
+        scoreFill.style.strokeDashoffset = offset;
+
+        // Count-up animation
+        const duration = 1200;
+        const start = performance.now();
+        function countUp(now) {
+          const elapsed = now - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          displayed = Math.round(eased * pct);
+          scoreEl.textContent = displayed + '%';
+          if (progress < 1) requestAnimationFrame(countUp);
+        }
+        requestAnimationFrame(countUp);
+      });
+    });
+  }
+
+  // Init slider gradients on load
+  updatePicker();
+</script>
+</body>
+</html>

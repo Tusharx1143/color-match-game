@@ -5,102 +5,151 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Color Match Game</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #1a1a2e;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: #0f0c29;
       color: #eee;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-
-    .screen {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 24px;
-      padding: 40px 20px;
-      width: 100%;
-      max-width: 480px;
-      text-align: center;
-    }
-    .screen.active { display: flex; }
-
-    h1 { font-size: 2rem; letter-spacing: 2px; }
-    h2 { font-size: 1.4rem; font-weight: 400; color: #aaa; }
-
-    /* ── START SCREEN ── */
-    #start-screen p {
-      color: #aaa;
-      line-height: 1.6;
-      max-width: 340px;
-    }
-
-    /* ── MEMORIZE SCREEN ── */
-    .color-box {
-      width: 260px;
-      height: 260px;
-      border-radius: 20px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
-      transition: background 0.3s;
-    }
-
-    .timer-ring {
+      overflow-x: hidden;
       position: relative;
-      width: 90px;
-      height: 90px;
     }
-    .timer-ring svg { transform: rotate(-90deg); }
-    .timer-ring circle {
-      fill: none;
-      stroke-width: 6;
-    }
-    .ring-bg { stroke: #333; }
-    .ring-fill {
-      stroke: #e94560;
-      stroke-linecap: round;
-      transition: stroke-dashoffset 1s linear;
-    }
-    .timer-num {
-      position: absolute;
+
+    body::before {
+      content: '';
+      position: fixed;
       inset: 0;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e, #1a1a2e, #16213e, #0f3460);
+      background-size: 400% 400%;
+      animation: bgShift 18s ease infinite;
+      z-index: -2;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(233,69,96,0.13) 0%, transparent 70%),
+                  radial-gradient(ellipse at 80% 100%, rgba(52,152,219,0.10) 0%, transparent 60%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    @keyframes bgShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    #confetti-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      overflow: hidden;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      top: -10px;
+      animation: confettiFall linear forwards;
+    }
+
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      80%  { opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    #app-wrap {
+      width: 100%;
+      max-width: 520px;
+      padding: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8rem;
-      font-weight: 700;
+      min-height: 100vh;
     }
 
-    /* ── MATCH SCREEN ── */
-    .palette-wrap {
+    .glass-card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      box-shadow: 0 8px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255,255,255,0.08);
       width: 100%;
+      position: relative;
+      min-height: 200px;
+      overflow: hidden;
+    }
+
+    /* Screen Transitions */
+    .screen {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-    }
-
-    .swatch-preview {
+      align-items: center;
+      gap: 24px;
+      padding: 40px 24px;
       width: 100%;
-      height: 100px;
-      border-radius: 14px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      text-align: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(40px);
+      transition: opacity 0.32s cubic-bezier(.4,0,.2,1), transform 0.32s cubic-bezier(.4,0,.2,1);
     }
 
-    .slider-label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.8rem;
-      color: #888;
-      margin-bottom: 4px;
+    .screen.active {
+      position: relative;
+      opacity: 1;
+      pointer-events: all;
+      transform: translateX(0);
     }
 
-    .slider-row {
-      display: flex;
-      flex-direction: column;
+    .screen.exit-left {
+      opacity: 0;
+      transform: translateX(-40px);
+      pointer-events: none;
     }
+
+    h1 { font-size: min(2rem, 8vw); letter-spacing: 2px; font-weight: 800; }
+    h2 { font-size: 1.4rem; font-weight: 400; color: #aaa; }
+
+    .color-box {
+      width: min(260px, 70vw);
+      height: min(260px, 70vw);
+      border-radius: 20px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      transition: background 0.3s;
+      animation: colorPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes colorPulse {
+      0%, 100% { box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+      50%       { box-shadow: 0 12px 56px rgba(0,0,0,0.6), 0 0 40px rgba(255,255,255,0.07); }
+    }
+
+    .timer-ring { position: relative; width: 90px; height: 90px; }
+    .timer-ring svg { transform: rotate(-90deg); }
+    .timer-ring circle { fill: none; stroke-width: 6; }
+    .ring-bg { stroke: rgba(255,255,255,0.12); }
+    .ring-fill { stroke: #e94560; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+    .timer-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 700; }
+
+    .palette-wrap { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+    .swatch-preview { width: 100%; height: 100px; border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); transition: background 0.15s; }
+
+    .slider-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 4px; }
+    .slider-row { display: flex; flex-direction: column; }
 
     input[type=range] {
       -webkit-appearance: none;
@@ -109,6 +158,7 @@
       border-radius: 7px;
       outline: none;
       cursor: pointer;
+      touch-action: manipulation;
     }
     input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
@@ -116,74 +166,48 @@
       height: 24px;
       border-radius: 50%;
       background: #fff;
-      border: 3px solid #1a1a2e;
+      border: 3px solid rgba(15,12,41,0.7);
       box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       cursor: grab;
+      transition: transform 0.12s;
+    }
+    input[type=range]:active::-webkit-slider-thumb {
+      transform: scale(1.3);
     }
 
-    /* hue gradient */
-    #hue-slider {
-      background: linear-gradient(to right,
-        hsl(0,100%,50%), hsl(30,100%,50%), hsl(60,100%,50%),
-        hsl(90,100%,50%), hsl(120,100%,50%), hsl(150,100%,50%),
-        hsl(180,100%,50%), hsl(210,100%,50%), hsl(240,100%,50%),
-        hsl(270,100%,50%), hsl(300,100%,50%), hsl(330,100%,50%),
-        hsl(360,100%,50%));
+    @media (hover: none) and (pointer: coarse) {
+      input[type=range] { height: 20px; }
     }
 
-    /* saturation & lightness are updated via JS */
-    #sat-slider, #lit-slider { }
+    #hue-slider { background: linear-gradient(to right, hsl(0,100%,50%), hsl(30,100%,50%), hsl(60,100%,50%), hsl(90,100%,50%), hsl(120,100%,50%), hsl(150,100%,50%), hsl(180,100%,50%), hsl(210,100%,50%), hsl(240,100%,50%), hsl(270,100%,50%), hsl(300,100%,50%), hsl(330,100%,50%), hsl(360,100%,50%)); }
 
-    /* ── RESULT SCREEN ── */
-    .result-row {
-      display: flex;
-      gap: 16px;
-      width: 100%;
-    }
+    .result-row { display: flex; gap: 16px; width: 100%; }
     .result-card {
       flex: 1;
       border-radius: 14px;
       overflow: hidden;
-      background: #16213e;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
     }
-    .result-color {
-      width: 100%;
-      height: 130px;
-    }
-    .result-label {
-      padding: 10px;
-      font-size: 0.85rem;
-      color: #aaa;
-    }
-    .result-hex {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #fff;
-    }
+    .result-color { width: 100%; height: 130px; }
+    .result-label { padding: 10px; font-size: 0.85rem; color: #aaa; }
+    .result-hex { font-size: 1rem; font-weight: 600; color: #fff; }
+    .result-name { font-size: 0.72rem; color: #aaa; font-style: italic; display: block; margin-top: 2px; }
 
-    .score-ring {
-      position: relative;
-      width: 160px;
-      height: 160px;
-    }
+    .score-ring { position: relative; width: 160px; height: 160px; }
     .score-ring svg { transform: rotate(-90deg); }
     .score-ring circle { fill: none; stroke-width: 12; }
-    .score-bg { stroke: #333; }
+    .score-bg { stroke: rgba(255,255,255,0.1); }
     .score-fill { stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1); }
-    .score-text {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+    .score-ring.glowing svg {
+      filter: drop-shadow(0 0 16px var(--glow-color, #2ecc71));
+      transition: filter 0.6s ease;
     }
+    .score-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .score-pct { font-size: 2rem; font-weight: 700; }
     .score-sub { font-size: 0.75rem; color: #888; margin-top: 2px; }
-
     .score-msg { font-size: 1.1rem; color: #ccc; }
 
-    /* ── BUTTON ── */
     button {
       padding: 14px 40px;
       border: none;
@@ -191,277 +215,717 @@
       font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
+      transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+      position: relative;
+      overflow: hidden;
+      touch-action: manipulation;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
     }
     button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
-    button:active { transform: translateY(0); }
+    button:active { transform: translateY(0); filter: brightness(0.92); }
 
-    .btn-primary { background: #e94560; color: #fff; }
-    .btn-secondary { background: #16213e; color: #fff; border: 1px solid #333; }
+    .btn-primary {
+      background: linear-gradient(135deg, #e94560, #c0392b);
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(233,69,96,0.35);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 24px rgba(233,69,96,0.5); }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .btn-hint {
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: #fff;
+      padding: 10px 24px;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 14px rgba(243,156,18,0.3);
+    }
+    .btn-hint:disabled { background: rgba(255,255,255,0.08); color: #666; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Ripple */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.28);
+      transform: scale(0);
+      animation: rippleAnim 0.6s linear;
+      pointer-events: none;
+    }
+    @keyframes rippleAnim {
+      to { transform: scale(2.5); opacity: 0; }
+    }
+
+    /* Mode Grid */
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+    .mode-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 16px;
+      padding: 18px 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.15s, background 0.2s;
+      text-align: left;
+      touch-action: manipulation;
+    }
+    .mode-card:hover { border-color: #e94560; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); background: rgba(233,69,96,0.08); }
+    .mode-card.selected { border-color: #e94560; background: rgba(233,69,96,0.12); }
+    .mode-icon { font-size: 1.6rem; margin-bottom: 6px; }
+    .mode-name { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .mode-desc { font-size: 0.75rem; color: #888; line-height: 1.4; }
+    .best-score-badge { font-size: 0.7rem; color: #f39c12; margin-top: 6px; font-weight: 600; }
+
+    /* Blitz HUD */
+    .blitz-hud {
+      display: flex; justify-content: space-between; align-items: center; width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 12px 20px;
+    }
+    .blitz-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .blitz-stat-val { font-size: 1.4rem; font-weight: 700; color: #e94560; }
+    .blitz-stat-label { font-size: 0.7rem; color: #888; }
+
+    /* Streak HUD */
+    .streak-hud {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 12px 20px;
+    }
+    .streak-count { font-size: 1.8rem; font-weight: 700; color: #f39c12; }
+    .streak-label { font-size: 0.85rem; color: #aaa; }
+
+    /* History */
+    .history-wrap { width: 100%; }
+    .history-title { font-size: 0.75rem; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .history-dots { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .history-dot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .dot-circle { width: 36px; height: 36px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+    .dot-pct { font-size: 0.65rem; color: #aaa; }
+
+    /* Hint Overlay */
+    .hint-overlay { display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); }
+    .hint-overlay.active { display: flex; }
+    .hint-color-box { width: min(220px, 60vw); height: min(220px, 60vw); border-radius: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); }
+
+    /* Daily Badge */
+    .daily-badge { background: rgba(44,62,110,0.7); border: 1px solid rgba(127,179,255,0.2); border-radius: 10px; padding: 8px 16px; font-size: 0.85rem; color: #7fb3ff; }
+
+    .best-row { font-size: 0.85rem; color: #888; }
+    .best-row span { color: #f39c12; font-weight: 700; }
+    .hint-deduct { font-size: 0.75rem; color: #e67e22; margin-top: -12px; }
+
+    /* Blitz Result Summary */
+    .blitz-result-summary {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 16px;
+    }
+    .blitz-result-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .blitz-result-row:last-child { margin-bottom: 0; }
+    .blitz-result-label { font-size: 0.85rem; color: #aaa; }
+    .blitz-result-val { font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+    /* Streak ended msg */
+    #streak-ended-msg {
+      font-size: 0.9rem;
+      color: #e94560;
+      background: rgba(233,69,96,0.1);
+      border: 1px solid rgba(233,69,96,0.25);
+      border-radius: 10px;
+      padding: 10px 18px;
+    }
   </style>
 </head>
 <body>
+<div id="confetti-container"></div>
 
-<!-- START -->
-<div id="start-screen" class="screen active">
-  <h1>Color Match</h1>
-  <p>A random color will appear for <strong>10 seconds</strong>.<br>
-     Memorize it, then recreate it using the color sliders.<br>
-     See how close you can get!</p>
-  <button class="btn-primary" onclick="startGame()">Play</button>
-</div>
+<div id="app-wrap">
+  <div class="glass-card">
 
-<!-- MEMORIZE -->
-<div id="memorize-screen" class="screen">
-  <h2>Memorize this color</h2>
-  <div class="color-box" id="target-box"></div>
-  <div class="timer-ring">
-    <svg width="90" height="90" viewBox="0 0 90 90">
-      <circle class="ring-bg" cx="45" cy="45" r="38"/>
-      <circle class="ring-fill" id="ring-fill" cx="45" cy="45" r="38"
-              stroke-dasharray="238.76" stroke-dashoffset="0"/>
-    </svg>
-    <div class="timer-num" id="timer-num">10</div>
-  </div>
-</div>
-
-<!-- MATCH -->
-<div id="match-screen" class="screen">
-  <h2>Match the color</h2>
-  <div class="palette-wrap">
-    <div class="swatch-preview" id="user-swatch"></div>
-
-    <div class="slider-row">
-      <div class="slider-label"><span>Hue</span><span id="hue-val">180°</span></div>
-      <input type="range" id="hue-slider" min="0" max="360" value="180" oninput="updatePicker()">
+    <!-- Hint Overlay (outside screens, fixed) -->
+    <div class="hint-overlay" id="hint-overlay">
+      <div class="hint-color-box" id="hint-color-box"></div>
     </div>
 
-    <div class="slider-row">
-      <div class="slider-label"><span>Saturation</span><span id="sat-val">50%</span></div>
-      <input type="range" id="sat-slider" min="0" max="100" value="50" oninput="updatePicker()">
+    <!-- MODE SCREEN -->
+    <div id="mode-screen" class="screen active">
+      <h1>🎨 <span style="background:linear-gradient(135deg,#e94560,#f39c12);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Color Match</span></h1>
+      <h2>Choose your mode</h2>
+      <div class="mode-grid" id="mode-grid">
+        <div class="mode-card selected" data-mode="classic" onclick="selectMode('classic')">
+          <div class="mode-icon">🎨</div>
+          <div class="mode-name">Classic</div>
+          <div class="mode-desc">10s to memorize. One color. Best score wins.</div>
+          <div class="best-score-badge" id="best-classic"></div>
+        </div>
+        <div class="mode-card" data-mode="blitz" onclick="selectMode('blitz')">
+          <div class="mode-icon">⚡</div>
+          <div class="mode-name">Timed Blitz</div>
+          <div class="mode-desc">60 seconds. Match as many colors as fast as possible.</div>
+          <div class="best-score-badge" id="best-blitz"></div>
+        </div>
+        <div class="mode-card" data-mode="hard" onclick="selectMode('hard')">
+          <div class="mode-icon">💀</div>
+          <div class="mode-name">Hard Mode</div>
+          <div class="mode-desc">5s memorize. Slider labels are hidden.</div>
+          <div class="best-score-badge" id="best-hard"></div>
+        </div>
+        <div class="mode-card" data-mode="daily" onclick="selectMode('daily')">
+          <div class="mode-icon">📅</div>
+          <div class="mode-name">Daily Challenge</div>
+          <div class="mode-desc">Same color for everyone today. One attempt per day.</div>
+          <div class="best-score-badge" id="best-daily"></div>
+        </div>
+        <div class="mode-card" data-mode="streak" onclick="selectMode('streak')" style="grid-column: span 2;">
+          <div class="mode-icon">🔥</div>
+          <div class="mode-name">Streak Mode</div>
+          <div class="mode-desc">Keep matching. Score below 60% breaks your streak.</div>
+          <div class="best-score-badge" id="best-streak"></div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="startGame()">▶ Play</button>
     </div>
 
-    <div class="slider-row">
-      <div class="slider-label"><span>Lightness</span><span id="lit-val">50%</span></div>
-      <input type="range" id="lit-slider" min="0" max="100" value="50" oninput="updatePicker()">
+    <!-- MEMORIZE SCREEN -->
+    <div id="memorize-screen" class="screen">
+      <h2 id="memorize-label">Memorize this color</h2>
+      <div class="color-box" id="target-box"></div>
+      <div class="timer-ring">
+        <svg width="90" height="90" viewBox="0 0 90 90">
+          <circle class="ring-bg" cx="45" cy="45" r="38"/>
+          <circle class="ring-fill" id="ring-fill" cx="45" cy="45" r="38" stroke-dasharray="238.76" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-num" id="timer-num">10</div>
+      </div>
     </div>
-  </div>
-  <button class="btn-primary" onclick="confirmColor()">Confirm</button>
-</div>
 
-<!-- RESULT -->
-<div id="result-screen" class="screen">
-  <h2>Results</h2>
-  <div class="result-row">
-    <div class="result-card">
-      <div class="result-color" id="res-target"></div>
-      <div class="result-label">Target<br><span class="result-hex" id="res-target-hex"></span></div>
+    <!-- MATCH SCREEN -->
+    <div id="match-screen" class="screen">
+      <h2 id="match-heading">Match the color</h2>
+      <div class="blitz-hud" id="blitz-hud" style="display:none;">
+        <div class="blitz-stat"><div class="blitz-stat-val" id="blitz-time">60</div><div class="blitz-stat-label">seconds left</div></div>
+        <div class="blitz-stat"><div class="blitz-stat-val" id="blitz-score">0</div><div class="blitz-stat-label">total score</div></div>
+        <div class="blitz-stat"><div class="blitz-stat-val" id="blitz-count">0</div><div class="blitz-stat-label">rounds</div></div>
+      </div>
+      <div class="streak-hud" id="streak-hud" style="display:none;">
+        <div class="streak-count" id="streak-count">0</div>
+        <div><div class="streak-label">current streak</div><div style="font-size:0.75rem;color:#666;" id="streak-best-label"></div></div>
+      </div>
+      <div class="palette-wrap">
+        <div class="swatch-preview" id="user-swatch"></div>
+        <div class="slider-row" id="slider-hue-row">
+          <div class="slider-label"><span id="hue-label-text">Hue</span><span id="hue-val">180°</span></div>
+          <input type="range" id="hue-slider" min="0" max="360" value="180" oninput="updatePicker(); playTick()">
+        </div>
+        <div class="slider-row" id="slider-sat-row">
+          <div class="slider-label"><span id="sat-label-text">Saturation</span><span id="sat-val">50%</span></div>
+          <input type="range" id="sat-slider" min="0" max="100" value="50" oninput="updatePicker(); playTick()">
+        </div>
+        <div class="slider-row" id="slider-lit-row">
+          <div class="slider-label"><span id="lit-label-text">Lightness</span><span id="lit-val">50%</span></div>
+          <input type="range" id="lit-slider" min="0" max="100" value="50" oninput="updatePicker(); playTick()">
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;">
+        <button class="btn-primary" onclick="confirmColor()">✓ Confirm</button>
+        <button class="btn-hint" id="hint-btn" onclick="useHint()">💡 Hint (-15)</button>
+      </div>
+      <div class="hint-deduct" id="hint-deduct-label" style="display:none;">Hint used: -15 points applied</div>
     </div>
-    <div class="result-card">
-      <div class="result-color" id="res-user"></div>
-      <div class="result-label">Your pick<br><span class="result-hex" id="res-user-hex"></span></div>
+
+    <!-- RESULT SCREEN -->
+    <div id="result-screen" class="screen">
+      <h2 id="result-heading">Results</h2>
+      <div class="daily-badge" id="daily-done-msg" style="display:none;">Come back tomorrow for a new challenge!</div>
+      <div class="result-row" id="result-colors-row">
+        <div class="result-card">
+          <div class="result-color" id="res-target"></div>
+          <div class="result-label">
+            Target<br>
+            <span class="result-hex" id="res-target-hex"></span>
+            <span class="result-name" id="res-target-name"></span>
+          </div>
+        </div>
+        <div class="result-card">
+          <div class="result-color" id="res-user"></div>
+          <div class="result-label">
+            Your pick<br>
+            <span class="result-hex" id="res-user-hex"></span>
+            <span class="result-name" id="res-user-name"></span>
+          </div>
+        </div>
+      </div>
+      <div class="blitz-result-summary" id="blitz-summary" style="display:none;">
+        <div class="blitz-result-row"><div class="blitz-result-label">Total Score</div><div class="blitz-result-val" id="blitz-total-score">0</div></div>
+        <div class="blitz-result-row"><div class="blitz-result-label">Rounds Completed</div><div class="blitz-result-val" id="blitz-total-rounds">0</div></div>
+        <div class="blitz-result-row"><div class="blitz-result-label">Average Score</div><div class="blitz-result-val" id="blitz-avg-score">0%</div></div>
+      </div>
+      <div class="score-ring" id="score-ring-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle class="score-bg" cx="80" cy="80" r="64"/>
+          <circle class="score-fill" id="score-fill" cx="80" cy="80" r="64" stroke-dasharray="402.12" stroke-dashoffset="402.12"/>
+        </svg>
+        <div class="score-text">
+          <span class="score-pct" id="score-pct">0%</span>
+          <span class="score-sub" id="score-sub">match</span>
+        </div>
+      </div>
+      <p class="score-msg" id="score-msg"></p>
+      <div class="best-row" id="best-row" style="display:none;">Best: <span id="best-display"></span></div>
+      <div id="streak-ended-msg" style="display:none;">
+        Streak broken! Final streak: <strong id="streak-final-count">0</strong>
+      </div>
+      <div class="history-wrap" id="history-wrap" style="display:none;">
+        <div class="history-title">Last 5 Rounds</div>
+        <div class="history-dots" id="history-dots"></div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+        <button class="btn-primary" id="play-again-btn" onclick="playAgain()">▶ Play Again</button>
+        <button class="btn-secondary" onclick="showModeScreen()">⌂ Menu</button>
+      </div>
     </div>
-  </div>
 
-  <div class="score-ring">
-    <svg width="160" height="160" viewBox="0 0 160 160">
-      <circle class="score-bg" cx="80" cy="80" r="64"/>
-      <circle class="score-fill" id="score-fill" cx="80" cy="80" r="64"
-              stroke-dasharray="402.12" stroke-dashoffset="402.12"/>
-    </svg>
-    <div class="score-text">
-      <span class="score-pct" id="score-pct">0%</span>
-      <span class="score-sub">match</span>
-    </div>
-  </div>
-
-  <p class="score-msg" id="score-msg"></p>
-
-  <div style="display:flex;gap:12px">
-    <button class="btn-primary" onclick="startGame()">Play Again</button>
-    <button class="btn-secondary" onclick="showStart()">Menu</button>
-  </div>
-</div>
+  </div><!-- .glass-card -->
+</div><!-- #app-wrap -->
 
 <script>
-  // ── State ──────────────────────────────────────────────────────────
   let targetRGB = { r: 0, g: 0, b: 0 };
   let timerInterval = null;
   let secondsLeft = 10;
-  const CIRCUMFERENCE = 2 * Math.PI * 38; // 238.76
+  const CIRCUMFERENCE_SMALL = 2 * Math.PI * 38;
+  const CIRCUMFERENCE_LARGE = 2 * Math.PI * 64;
+  let currentMode = 'classic';
+  let hintUsed = false;
+  let blitzTimeLeft = 60;
+  let blitzTotalScore = 0;
+  let blitzRoundCount = 0;
+  let blitzTimerInterval = null;
+  let blitzActive = false;
+  let currentStreak = 0;
+  let streakBroken = false;
+  const TODAY_DATE = getTodayDateString();
 
-  // ── Helpers ────────────────────────────────────────────────────────
-  function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+  // ── AUDIO ──────────────────────────────────────────────────────────
+  let audioCtx = null;
+  let lastTickTime = 0;
+  function getAudioCtx() {
+    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
+    return audioCtx;
+  }
+  function playTone(freq, type, duration, gainVal, startDelay) {
+    startDelay = startDelay || 0;
+    const ctx = getAudioCtx(); if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime + startDelay);
+      g.gain.setValueAtTime(0, ctx.currentTime + startDelay);
+      g.gain.linearRampToValueAtTime(gainVal, ctx.currentTime + startDelay + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + startDelay + duration);
+      osc.start(ctx.currentTime + startDelay); osc.stop(ctx.currentTime + startDelay + duration + 0.05);
+    } catch(e) {}
+  }
+  function playTick() {
+    const now = Date.now(); if (now - lastTickTime < 80) return; lastTickTime = now;
+    playTone(880, 'sine', 0.06, 0.04);
+  }
+  function playResultSound(pct) {
+    if (pct >= 75) {
+      playTone(523.25,'sine',0.18,0.12,0);
+      playTone(659.25,'sine',0.18,0.12,0.15);
+      playTone(783.99,'sine',0.25,0.14,0.3);
+    } else if (pct >= 55) {
+      playTone(440,'sine',0.2,0.1,0);
+      playTone(440,'sine',0.2,0.08,0.25);
+    } else {
+      playTone(392,'sine',0.18,0.12,0);
+      playTone(329.63,'sine',0.18,0.12,0.15);
+      playTone(261.63,'sine',0.25,0.14,0.3);
+    }
   }
 
+  // ── COLOR NAMES ────────────────────────────────────────────────────
+  const COLOR_NAMES = [
+    {name:'Red',r:255,g:0,b:0},{name:'Crimson',r:220,g:20,b:60},{name:'Firebrick',r:178,g:34,b:34},
+    {name:'Tomato',r:255,g:99,b:71},{name:'Orange Red',r:255,g:69,b:0},{name:'Orange',r:255,g:165,b:0},
+    {name:'Gold',r:255,g:215,b:0},{name:'Yellow',r:255,g:255,b:0},{name:'Lime',r:0,g:255,b:0},
+    {name:'Lime Green',r:50,g:205,b:50},{name:'Forest Green',r:34,g:139,b:34},{name:'Teal',r:0,g:128,b:128},
+    {name:'Cyan',r:0,g:255,b:255},{name:'Steel Blue',r:70,g:130,b:180},{name:'Dodger Blue',r:30,g:144,b:255},
+    {name:'Blue',r:0,g:0,b:255},{name:'Navy',r:0,g:0,b:128},{name:'Indigo',r:75,g:0,b:130},
+    {name:'Violet',r:238,g:130,b:238},{name:'Purple',r:128,g:0,b:128},{name:'Magenta',r:255,g:0,b:255},
+    {name:'Deep Pink',r:255,g:20,b:147},{name:'Hot Pink',r:255,g:105,b:180},{name:'Salmon',r:250,g:128,b:114},
+    {name:'Coral',r:255,g:127,b:80},{name:'Chocolate',r:210,g:105,b:30},{name:'Sienna',r:160,g:82,b:45},
+    {name:'Tan',r:210,g:180,b:140},{name:'Khaki',r:240,g:230,b:140},{name:'Silver',r:192,g:192,b:192},
+    {name:'Gray',r:128,g:128,b:128},{name:'Slate Gray',r:112,g:128,b:144},{name:'Lavender',r:230,g:230,b:250},
+    {name:'Sky Blue',r:135,g:206,b:235},{name:'Olive',r:128,g:128,b:0},{name:'Dark Green',r:0,g:100,b:0}
+  ];
+  function nearestColorName(rgb) {
+    let best = COLOR_NAMES[0], bestDist = Infinity;
+    for (const c of COLOR_NAMES) {
+      const d = (rgb.r-c.r)**2 + (rgb.g-c.g)**2 + (rgb.b-c.b)**2;
+      if (d < bestDist) { bestDist = d; best = c; }
+    }
+    return best.name;
+  }
+
+  // ── CONFETTI ───────────────────────────────────────────────────────
+  function launchConfetti() {
+    const container = document.getElementById('confetti-container');
+    container.innerHTML = '';
+    const colors = ['#e94560','#f39c12','#2ecc71','#3498db','#9b59b6','#1abc9c','#fff'];
+    for (let i = 0; i < 80; i++) {
+      const p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.cssText = `left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;border-radius:${Math.random()>0.5?'50%':'2px'};animation-duration:${2.2+Math.random()*1.8}s;animation-delay:${Math.random()*0.8}s;`;
+      container.appendChild(p);
+    }
+    setTimeout(() => container.innerHTML = '', 4500);
+  }
+
+  // ── RIPPLE ─────────────────────────────────────────────────────────
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+  });
+
+  // ── SEEDED PRNG ────────────────────────────────────────────────────
+  function seededRandom(seed) {
+    let s = seed >>> 0;
+    return function() {
+      s += 0x6D2B79F5;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function dateToSeed(dateStr) {
+    let hash = 0;
+    for (let i = 0; i < dateStr.length; i++) { hash = ((hash << 5) - hash) + dateStr.charCodeAt(i); hash |= 0; }
+    return Math.abs(hash);
+  }
+  function getTodayDateString() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  }
+
+  // ── HELPERS ────────────────────────────────────────────────────────
+  function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function seededRandomInt(rng, min, max) { return Math.floor(rng() * (max - min + 1)) + min; }
   function hslToRgb(h, s, l) {
     s /= 100; l /= 100;
     const k = n => (n + h / 30) % 12;
     const a = s * Math.min(l, 1 - l);
     const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-    return { r: Math.round(f(0) * 255), g: Math.round(f(8) * 255), b: Math.round(f(4) * 255) };
+    return { r: Math.round(f(0)*255), g: Math.round(f(8)*255), b: Math.round(f(4)*255) };
   }
-
-  function rgbToHex({ r, g, b }) {
-    return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
-  }
-
+  function rgbToHex({r,g,b}) { return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join(''); }
   function colorDistance(a, b) {
-    // Weighted Euclidean distance in RGB (human perception weights)
-    const dr = a.r - b.r, dg = a.g - b.g, db = a.b - b.b;
-    const dist = Math.sqrt(0.299 * dr * dr + 0.587 * dg * dg + 0.114 * db * db);
-    const maxDist = Math.sqrt(0.299 * 255 * 255 + 0.587 * 255 * 255 + 0.114 * 255 * 255);
-    return Math.max(0, Math.round((1 - dist / maxDist) * 100));
+    const dr=a.r-b.r, dg=a.g-b.g, db=a.b-b.b;
+    const dist = Math.sqrt(0.299*dr*dr + 0.587*dg*dg + 0.114*db*db);
+    const maxDist = Math.sqrt(0.299*255*255 + 0.587*255*255 + 0.114*255*255);
+    return Math.max(0, Math.round((1 - dist/maxDist)*100));
   }
-
   function scoreMessage(pct) {
-    if (pct === 100) return "Perfect! Incredible eye!";
-    if (pct >= 90)  return "Outstanding! Almost identical!";
-    if (pct >= 75)  return "Great job! Very close!";
-    if (pct >= 55)  return "Not bad! Pretty decent match.";
-    if (pct >= 35)  return "Keep practicing, you'll get better!";
-    return "Way off — try again!";
+    if (pct===100) return "🏆 Perfect! Incredible eye!";
+    if (pct>=90) return "🌟 Outstanding! Almost identical!";
+    if (pct>=75) return "🎉 Great job! Very close!";
+    if (pct>=55) return "👍 Not bad! Pretty decent match.";
+    if (pct>=35) return "💪 Keep practicing!";
+    return "😅 Way off — try again!";
   }
+  function scoreColor(pct) { return pct>=85?'#2ecc71':pct>=60?'#f39c12':'#e94560'; }
 
-  function scoreColor(pct) {
-    if (pct >= 85) return '#2ecc71';
-    if (pct >= 60) return '#f39c12';
-    return '#e94560';
-  }
-
+  // ── SCREEN TRANSITIONS ─────────────────────────────────────────────
   function show(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+    const current = document.querySelector('.screen.active');
+    const next = document.getElementById(id);
+    if (!next || (current && current.id === id)) return;
+    if (current) {
+      current.classList.add('exit-left');
+      setTimeout(() => {
+        current.classList.remove('active', 'exit-left');
+      }, 320);
+    }
+    setTimeout(() => {
+      next.classList.add('active');
+    }, current ? 80 : 0);
   }
 
-  // ── Screens ────────────────────────────────────────────────────────
-  function showStart() {
-    clearInterval(timerInterval);
-    show('start-screen');
+  // ── LOCAL STORAGE ──────────────────────────────────────────────────
+  function lsGet(key, fallback) { try { const v=localStorage.getItem(key); return v!==null?JSON.parse(v):fallback; } catch(e) { return fallback; } }
+  function lsSet(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) {} }
+  function getBestScore(mode) { return lsGet('colormatch_best_'+mode, null); }
+  function setBestScore(mode, score) { const c=getBestScore(mode); if (c===null||score>c) { lsSet('colormatch_best_'+mode,score); return true; } return false; }
+  function getBestStreak() { return lsGet('colormatch_best_streak',0); }
+  function setBestStreak(val) { if (val>getBestStreak()) lsSet('colormatch_best_streak',val); }
+  function getDailyDone() { return lsGet('colormatch_daily_done',null); }
+  function setDailyDone(date,score) { lsSet('colormatch_daily_done',{date,score}); }
+  function getScoreHistory(mode) { return lsGet('colormatch_history_'+mode,[]); }
+  function addScoreHistory(mode, pct, targetHex, userHex) {
+    const h=getScoreHistory(mode); h.push({pct,targetHex,userHex}); if(h.length>5) h.shift();
+    lsSet('colormatch_history_'+mode,h); return h;
   }
 
+  // ── MODE SELECTION ─────────────────────────────────────────────────
+  function selectMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+    document.querySelector(`[data-mode="${mode}"]`).classList.add('selected');
+  }
+  function updateModeBestScores() {
+    ['classic','hard'].forEach(mode => {
+      const el=document.getElementById('best-'+mode), best=getBestScore(mode);
+      if(el) el.textContent = best!==null?`Best: ${best}%`:'';
+    });
+    const blitzEl=document.getElementById('best-blitz'), blitzBest=getBestScore('blitz');
+    if(blitzEl) blitzEl.textContent = blitzBest!==null?`Best total: ${blitzBest}`:'';
+    const streakEl=document.getElementById('best-streak'), bestStreak=getBestStreak();
+    if(streakEl) streakEl.textContent = bestStreak>0?`Best streak: ${bestStreak}`:'';
+    const dailyEl=document.getElementById('best-daily'), done=getDailyDone();
+    if(dailyEl) { if(done&&done.date===TODAY_DATE) dailyEl.textContent=`Today: ${done.score}%`; else { const b=getBestScore('daily'); dailyEl.textContent=b!==null?`All-time best: ${b}%`:''; } }
+  }
+
+  // ── NAVIGATION ─────────────────────────────────────────────────────
+  function showModeScreen() {
+    clearAllTimers(); blitzActive=false; currentStreak=0; streakBroken=false;
+    updateModeBestScores(); show('mode-screen');
+  }
+  function clearAllTimers() { clearInterval(timerInterval); clearInterval(blitzTimerInterval); timerInterval=null; blitzTimerInterval=null; }
+
+  // ── GAME START ─────────────────────────────────────────────────────
   function startGame() {
+    if (currentMode==='daily') { const done=getDailyDone(); if(done&&done.date===TODAY_DATE){showDailyAlreadyDone(done.score);return;} }
+    clearAllTimers(); hintUsed=false;
+    if (currentMode==='blitz') { blitzTotalScore=0; blitzRoundCount=0; blitzActive=true; blitzTimeLeft=60; startBlitzTimer(); }
+    if (currentMode==='streak') { streakBroken=false; }
+    generateTargetColor(); startMemorizePhase();
+  }
+  function playAgain() {
+    if (currentMode==='daily') { showModeScreen(); return; }
+    if (currentMode==='streak'&&streakBroken) { currentStreak=0; streakBroken=false; }
+    if (currentMode==='blitz') { clearAllTimers(); blitzTotalScore=0; blitzRoundCount=0; blitzActive=true; blitzTimeLeft=60; startBlitzTimer(); }
+    hintUsed=false; generateTargetColor(); startMemorizePhase();
+  }
+  function generateTargetColor() {
+    if (currentMode==='daily') {
+      const rng=seededRandom(dateToSeed(TODAY_DATE));
+      targetRGB=hslToRgb(seededRandomInt(rng,0,359),seededRandomInt(rng,40,100),seededRandomInt(rng,30,70));
+    } else { targetRGB=hslToRgb(randomInt(0,359),randomInt(40,100),randomInt(30,70)); }
+  }
+
+  // ── MEMORIZE PHASE ─────────────────────────────────────────────────
+  function startMemorizePhase() {
     clearInterval(timerInterval);
-
-    // Generate random target color (avoid very dark or very desaturated)
-    const h = randomInt(0, 359);
-    const s = randomInt(40, 100);
-    const l = randomInt(30, 70);
-    targetRGB = hslToRgb(h, s, l);
-
-    document.getElementById('target-box').style.background = rgbToHex(targetRGB);
-
-    // Timer setup
-    secondsLeft = 10;
-    document.getElementById('timer-num').textContent = secondsLeft;
-    const ring = document.getElementById('ring-fill');
-    ring.style.strokeDashoffset = '0';
-    ring.style.transition = 'none';
-
+    const memorizeSeconds=(currentMode==='hard'||currentMode==='blitz')?5:10;
+    secondsLeft=memorizeSeconds;
+    document.getElementById('target-box').style.background=rgbToHex(targetRGB);
+    document.getElementById('timer-num').textContent=secondsLeft;
+    document.getElementById('memorize-label').textContent=currentMode==='daily'?`📅 Daily Challenge — ${TODAY_DATE}`:'Memorize this color';
+    const ring=document.getElementById('ring-fill');
+    ring.style.strokeDashoffset='0'; ring.style.transition='none';
     show('memorize-screen');
-
-    // Animate ring immediately on next frame
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        ring.style.transition = `stroke-dashoffset ${secondsLeft}s linear`;
-        ring.style.strokeDashoffset = CIRCUMFERENCE;
-      });
-    });
-
-    timerInterval = setInterval(() => {
-      secondsLeft--;
-      document.getElementById('timer-num').textContent = secondsLeft;
-      if (secondsLeft <= 0) {
-        clearInterval(timerInterval);
-        openMatchScreen();
-      }
-    }, 1000);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      ring.style.transition=`stroke-dashoffset ${memorizeSeconds}s linear`;
+      ring.style.strokeDashoffset=CIRCUMFERENCE_SMALL;
+    }));
+    timerInterval=setInterval(()=>{
+      secondsLeft--; document.getElementById('timer-num').textContent=secondsLeft;
+      if(secondsLeft<=0){clearInterval(timerInterval);openMatchScreen();}
+    },1000);
   }
 
+  // ── BLITZ TIMER ────────────────────────────────────────────────────
+  function startBlitzTimer() {
+    clearInterval(blitzTimerInterval);
+    blitzTimerInterval=setInterval(()=>{
+      blitzTimeLeft--; const el=document.getElementById('blitz-time'); if(el) el.textContent=blitzTimeLeft;
+      if(blitzTimeLeft<=0){clearInterval(blitzTimerInterval);blitzActive=false;endBlitz();}
+    },1000);
+  }
+  function endBlitz() {
+    clearInterval(timerInterval);
+    const isNewBest=setBestScore('blitz',blitzTotalScore), bestBlitz=getBestScore('blitz');
+    document.getElementById('result-heading').textContent='⚡ Blitz Results';
+    document.getElementById('result-colors-row').style.display='none';
+    document.getElementById('blitz-summary').style.display='block';
+    document.getElementById('score-ring-wrap').style.display='none';
+    document.getElementById('daily-done-msg').style.display='none';
+    document.getElementById('streak-ended-msg').style.display='none';
+    document.getElementById('blitz-total-score').textContent=blitzTotalScore;
+    document.getElementById('blitz-total-rounds').textContent=blitzRoundCount;
+    document.getElementById('blitz-avg-score').textContent=(blitzRoundCount>0?Math.round(blitzTotalScore/blitzRoundCount):0)+'%';
+    document.getElementById('score-msg').textContent=isNewBest?'🎉 New personal best!':`Best total: ${bestBlitz}`;
+    document.getElementById('best-row').style.display='block';
+    document.getElementById('best-display').textContent=bestBlitz;
+    document.getElementById('play-again-btn').style.display='';
+    document.getElementById('play-again-btn').textContent='▶ Play Again';
+    renderHistory('blitz'); show('result-screen');
+  }
+
+  // ── MATCH SCREEN ───────────────────────────────────────────────────
   function openMatchScreen() {
-    // Reset sliders to mid values
-    document.getElementById('hue-slider').value = 180;
-    document.getElementById('sat-slider').value = 50;
-    document.getElementById('lit-slider').value = 50;
-    updatePicker();
-    show('match-screen');
+    if(currentMode==='blitz'&&!blitzActive){endBlitz();return;}
+    hintUsed=false;
+    document.getElementById('hue-slider').value=180;
+    document.getElementById('sat-slider').value=50;
+    document.getElementById('lit-slider').value=50;
+    const isHard=currentMode==='hard';
+    document.getElementById('hue-label-text').textContent=isHard?'???':'Hue';
+    document.getElementById('sat-label-text').textContent=isHard?'???':'Saturation';
+    document.getElementById('lit-label-text').textContent=isHard?'???':'Lightness';
+    document.getElementById('hue-val').style.display=isHard?'none':'';
+    document.getElementById('sat-val').style.display=isHard?'none':'';
+    document.getElementById('lit-val').style.display=isHard?'none':'';
+    const hintBtn=document.getElementById('hint-btn');
+    hintBtn.disabled=false; hintBtn.textContent='💡 Hint (-15)';
+    document.getElementById('hint-deduct-label').style.display='none';
+    document.getElementById('blitz-hud').style.display=currentMode==='blitz'?'flex':'none';
+    document.getElementById('streak-hud').style.display=currentMode==='streak'?'flex':'none';
+    if(currentMode==='blitz'){document.getElementById('blitz-time').textContent=blitzTimeLeft;document.getElementById('blitz-score').textContent=blitzTotalScore;document.getElementById('blitz-count').textContent=blitzRoundCount;}
+    if(currentMode==='streak'){document.getElementById('streak-count').textContent=currentStreak;const bs=getBestStreak();document.getElementById('streak-best-label').textContent=bs>0?`Best: ${bs}`:'';}
+    document.getElementById('match-heading').textContent=currentMode==='daily'?"🎯 Match today's color":'🎯 Match the color';
+    updatePicker(); show('match-screen');
   }
 
+  // ── PICKER ─────────────────────────────────────────────────────────
   function updatePicker() {
-    const h = +document.getElementById('hue-slider').value;
-    const s = +document.getElementById('sat-slider').value;
-    const l = +document.getElementById('lit-slider').value;
-
-    document.getElementById('hue-val').textContent = h + '°';
-    document.getElementById('sat-val').textContent = s + '%';
-    document.getElementById('lit-val').textContent = l + '%';
-
-    const color = `hsl(${h},${s}%,${l}%)`;
-    document.getElementById('user-swatch').style.background = color;
-
-    // Update sat slider gradient
-    const satSlider = document.getElementById('sat-slider');
-    satSlider.style.background = `linear-gradient(to right, hsl(${h},0%,${l}%), hsl(${h},100%,${l}%))`;
-
-    // Update lit slider gradient
-    const litSlider = document.getElementById('lit-slider');
-    litSlider.style.background = `linear-gradient(to right, hsl(${h},${s}%,0%), hsl(${h},${s}%,50%), hsl(${h},${s}%,100%))`;
+    const h=+document.getElementById('hue-slider').value, s=+document.getElementById('sat-slider').value, l=+document.getElementById('lit-slider').value;
+    document.getElementById('hue-val').textContent=h+'°';
+    document.getElementById('sat-val').textContent=s+'%';
+    document.getElementById('lit-val').textContent=l+'%';
+    document.getElementById('user-swatch').style.background=`hsl(${h},${s}%,${l}%)`;
+    document.getElementById('sat-slider').style.background=`linear-gradient(to right,hsl(${h},0%,${l}%),hsl(${h},100%,${l}%))`;
+    document.getElementById('lit-slider').style.background=`linear-gradient(to right,hsl(${h},${s}%,0%),hsl(${h},${s}%,50%),hsl(${h},${s}%,100%))`;
   }
 
+  // ── HINT ───────────────────────────────────────────────────────────
+  function useHint() {
+    if(hintUsed) return; hintUsed=true;
+    const hintBtn=document.getElementById('hint-btn');
+    hintBtn.disabled=true; hintBtn.textContent='Hint used';
+    document.getElementById('hint-deduct-label').style.display='block';
+    const overlay=document.getElementById('hint-overlay');
+    document.getElementById('hint-color-box').style.background=rgbToHex(targetRGB);
+    overlay.classList.add('active');
+    setTimeout(()=>overlay.classList.remove('active'),1500);
+  }
+
+  // ── CONFIRM COLOR ──────────────────────────────────────────────────
   function confirmColor() {
-    const h = +document.getElementById('hue-slider').value;
-    const s = +document.getElementById('sat-slider').value;
-    const l = +document.getElementById('lit-slider').value;
-    const userRGB = hslToRgb(h, s, l);
-    const pct = colorDistance(targetRGB, userRGB);
+    const h=+document.getElementById('hue-slider').value, s=+document.getElementById('sat-slider').value, l=+document.getElementById('lit-slider').value;
+    const userRGB=hslToRgb(h,s,l);
+    let pct=colorDistance(targetRGB,userRGB);
+    if(hintUsed) pct=Math.max(0,pct-15);
+    const targetHex=rgbToHex(targetRGB), userHex=rgbToHex(userRGB);
+    addScoreHistory(currentMode,pct,targetHex,userHex);
+    if(currentMode==='blitz'){
+      blitzTotalScore+=pct; blitzRoundCount++;
+      if(!blitzActive){endBlitz();return;}
+      hintUsed=false; generateTargetColor(); startMemorizePhase(); return;
+    }
+    if(currentMode==='streak'){
+      if(pct>=60){currentStreak++;setBestStreak(currentStreak);}
+      else{streakBroken=true;setBestStreak(currentStreak);}
+    }
+    if(currentMode==='daily') setDailyDone(TODAY_DATE,pct);
+    showResult(pct,targetHex,userHex,userRGB);
+  }
 
-    const targetHex = rgbToHex(targetRGB);
-    const userHex   = rgbToHex(userRGB);
+  // ── SHOW RESULT ────────────────────────────────────────────────────
+  function showResult(pct, targetHex, userHex, userRGB) {
+    // If userRGB not passed (e.g. called from endBlitz path), derive it
+    if (!userRGB) {
+      const h=+document.getElementById('hue-slider').value, s=+document.getElementById('sat-slider').value, l=+document.getElementById('lit-slider').value;
+      userRGB = hslToRgb(h, s, l);
+    }
+    document.getElementById('result-heading').textContent='Results';
+    document.getElementById('result-colors-row').style.display='flex';
+    document.getElementById('blitz-summary').style.display='none';
+    document.getElementById('score-ring-wrap').style.display='block';
+    document.getElementById('res-target').style.background=targetHex;
+    document.getElementById('res-user').style.background=userHex;
+    document.getElementById('res-target-hex').textContent=targetHex;
+    document.getElementById('res-user-hex').textContent=userHex;
+    document.getElementById('res-target-name').textContent=nearestColorName(targetRGB);
+    document.getElementById('res-user-name').textContent=nearestColorName(userRGB);
+    document.getElementById('score-msg').textContent=scoreMessage(pct);
+    document.getElementById('score-sub').textContent='match';
+    document.getElementById('daily-done-msg').style.display=currentMode==='daily'?'block':'none';
+    if(currentMode==='streak'&&streakBroken){document.getElementById('streak-ended-msg').style.display='block';document.getElementById('streak-final-count').textContent=currentStreak;}
+    else document.getElementById('streak-ended-msg').style.display='none';
+    let isNewBest=false;
+    if(currentMode!=='streak') isNewBest=setBestScore(currentMode,pct);
+    const bestRow=document.getElementById('best-row'), bestDisplay=document.getElementById('best-display');
+    if(currentMode==='streak'){bestRow.style.display='block';bestDisplay.textContent='Best streak: '+getBestStreak();}
+    else{const best=getBestScore(currentMode);if(best!==null){bestRow.style.display='block';bestDisplay.textContent=best+'%'+(isNewBest?' — new best! 🏆':'');}else bestRow.style.display='none';}
+    const playBtn=document.getElementById('play-again-btn');
+    if(currentMode==='daily'){playBtn.style.display='none';}
+    else{playBtn.style.display='';playBtn.textContent=(currentMode==='streak'&&streakBroken)?'Start New Streak':'▶ Play Again';}
+    const scoreFill=document.getElementById('score-fill'), scoreRingWrap=document.getElementById('score-ring-wrap');
+    const sColor=scoreColor(pct);
+    scoreFill.style.stroke=sColor; scoreFill.style.strokeDashoffset=CIRCUMFERENCE_LARGE; scoreFill.style.transition='none';
+    scoreRingWrap.style.setProperty('--glow-color',sColor);
+    scoreRingWrap.classList.remove('glowing');
+    const scoreEl=document.getElementById('score-pct'); scoreEl.textContent='0%'; scoreEl.style.color=sColor;
+    show('result-screen'); renderHistory(currentMode);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const offset=CIRCUMFERENCE_LARGE*(1-pct/100);
+      scoreFill.style.transition='stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)';
+      scoreFill.style.strokeDashoffset=offset;
+      setTimeout(()=>scoreRingWrap.classList.add('glowing'),600);
+      const duration=1200, start=performance.now();
+      function countUp(now){const elapsed=now-start,progress=Math.min(elapsed/duration,1),eased=1-Math.pow(1-progress,3);scoreEl.textContent=Math.round(eased*pct)+'%';if(progress<1)requestAnimationFrame(countUp);}
+      requestAnimationFrame(countUp);
+      playResultSound(pct);
+      if(pct>=90) setTimeout(launchConfetti,400);
+    }));
+  }
 
-    document.getElementById('res-target').style.background = targetHex;
-    document.getElementById('res-user').style.background   = userHex;
-    document.getElementById('res-target-hex').textContent  = targetHex;
-    document.getElementById('res-user-hex').textContent    = userHex;
-    document.getElementById('score-msg').textContent       = scoreMessage(pct);
-
-    const scoreFill = document.getElementById('score-fill');
-    const circumference = 2 * Math.PI * 64; // 402.12
-    scoreFill.style.stroke = scoreColor(pct);
-    scoreFill.style.strokeDashoffset = circumference; // reset
-    scoreFill.style.transition = 'none';
-
-    show('result-screen');
-
-    // Animate score ring
-    const scoreEl = document.getElementById('score-pct');
-    scoreEl.textContent = '0%';
-    let displayed = 0;
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const offset = circumference * (1 - pct / 100);
-        scoreFill.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)';
-        scoreFill.style.strokeDashoffset = offset;
-
-        // Count-up animation
-        const duration = 1200;
-        const start = performance.now();
-        function countUp(now) {
-          const elapsed = now - start;
-          const progress = Math.min(elapsed / duration, 1);
-          const eased = 1 - Math.pow(1 - progress, 3);
-          displayed = Math.round(eased * pct);
-          scoreEl.textContent = displayed + '%';
-          if (progress < 1) requestAnimationFrame(countUp);
-        }
-        requestAnimationFrame(countUp);
-      });
+  // ── HISTORY ────────────────────────────────────────────────────────
+  function renderHistory(mode) {
+    const history=getScoreHistory(mode), wrap=document.getElementById('history-wrap'), dots=document.getElementById('history-dots');
+    if(history.length<2){wrap.style.display='none';return;}
+    wrap.style.display='block'; dots.innerHTML='';
+    history.forEach(entry=>{
+      const dotWrap=document.createElement('div'); dotWrap.className='history-dot';
+      const circle=document.createElement('div'); circle.className='dot-circle';
+      circle.style.background=`linear-gradient(to right,${entry.targetHex} 50%,${entry.userHex} 50%)`;
+      circle.title=`Target: ${entry.targetHex} | You: ${entry.userHex}`;
+      const pctLabel=document.createElement('div'); pctLabel.className='dot-pct';
+      pctLabel.textContent=entry.pct+'%'; pctLabel.style.color=scoreColor(entry.pct);
+      dotWrap.appendChild(circle); dotWrap.appendChild(pctLabel); dots.appendChild(dotWrap);
     });
   }
 
-  // Init slider gradients on load
-  updatePicker();
+  // ── DAILY ALREADY DONE ─────────────────────────────────────────────
+  function showDailyAlreadyDone(score) {
+    document.getElementById('result-heading').textContent='📅 Daily Challenge';
+    document.getElementById('result-colors-row').style.display='none';
+    document.getElementById('blitz-summary').style.display='none';
+    document.getElementById('score-ring-wrap').style.display='none';
+    document.getElementById('daily-done-msg').style.display='block';
+    document.getElementById('streak-ended-msg').style.display='none';
+    document.getElementById('score-msg').textContent=`You scored ${score}% today.`;
+    const best=getBestScore('daily'), bestRow=document.getElementById('best-row');
+    if(best!==null){bestRow.style.display='block';document.getElementById('best-display').textContent=best+'%';}
+    else bestRow.style.display='none';
+    document.getElementById('play-again-btn').style.display='none';
+    renderHistory('daily'); show('result-screen');
+  }
+
+  // ── INIT ───────────────────────────────────────────────────────────
+  updatePicker(); updateModeBestScores();
 </script>
 </body>
 </html>
